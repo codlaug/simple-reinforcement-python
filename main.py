@@ -16,8 +16,6 @@ import numpy as np
 
 from ddqn import DuelingDQN
 
-# data = json.load(open('testdata.json', 'r'))
-
 
 
 
@@ -57,38 +55,39 @@ RL = DuelingDQN(n_actions=ACTION_SPACE, n_features=2, memory_size=MEMORY_SIZE, e
 
 sess.run(tf.global_variables_initializer())
 
-accumulated_reward = [0]
-total_steps = 0
-observation = env.reset()
 while True:
-    # action = env.action_space.sample()
+    accumulated_reward = [0]
+    total_steps = 0
+    observation = env.reset()
+    while True:
+        # action = env.action_space.sample()
 
-    action = RL.choose_action(observation[0])
+        action = RL.choose_action(observation[0])
 
-    # TODO: multiple episodes - do env.reset() inside a loop so it can try over and over again
+        observation_, reward, done, info = env.step(action)
 
+        accumulated_reward.append(reward + accumulated_reward[-1])
 
-    observation_, reward, done, info = env.step(action)
-
-    accumulated_reward.append(reward + accumulated_reward[-1])
-
-    RL.store_transition(observation[0], action, reward, observation_[0])
+        RL.store_transition(observation[0], action, reward, observation_[0])
 
 
-    if total_steps > MEMORY_SIZE:
-        RL.learn()
+        if total_steps > MEMORY_SIZE:
+            RL.learn()
 
-    if total_steps - MEMORY_SIZE > 50000:
+        if total_steps - MEMORY_SIZE > 50000:
+            break
+
+        observation = observation_
+        total_steps += 1
+        # env.render()
+        if done:
+            print("info:", info)
+            
+
+    plt.cla()
+    # env.render_all()
+    render_all(env)
+    plt.show()
+
+    if env._total_reward > 50000:
         break
-
-    observation = observation_
-    total_steps += 1
-    # env.render()
-    if done:
-        print("info:", info)
-        
-
-plt.cla()
-# env.render_all()
-render_all(env)
-plt.show()
