@@ -80,7 +80,7 @@ class DuelingDQN:
                     self.A = tf.matmul(l1, w2) + b2
 
                 with tf.variable_scope('Q'):
-                    out = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keep_dims=True))     # Q = V(s) + A(s,a)
+                    out = self.V + (self.A - tf.reduce_mean(self.A, axis=1, keepdims=True))     # Q = V(s) + A(s,a)
             else:
                 with tf.variable_scope('Q'):
                     w2 = tf.get_variable('w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
@@ -131,7 +131,7 @@ class DuelingDQN:
     def learn(self):
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.replace_target_op)
-            print('\ntarget_params_replaced\n')
+            # print('\ntarget_params_replaced\n')
 
         sample_index = np.random.choice(self.memory_size, size=self.batch_size)
         batch_memory = self.memory[sample_index, :]
