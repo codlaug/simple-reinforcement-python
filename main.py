@@ -15,30 +15,47 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 import ta
+from sklearn.preprocessing import MinMaxScaler
 
 from ddqn import DuelingDQN
 
 
 
 def process_data(env):
+    # df = env.df[env.frame_bound[0] : env.frame_bound[1]]
     df = ta.utils.dropna(env.df)
-    df = ta.add_all_ta_features(env.df, open="Open", high="High", low="Low", close="Close", volume="Volume")
+    df = ta.add_all_ta_features(df, open="Open", high="High", low="Low", close="Close", volume="Volume")
+    
+    # print(df)
 
-    prices = env.df.loc[:, 'Close'].to_numpy()
+    min_max_scaler = MinMaxScaler()
+    # min_max_scaler.fit(df.loc[:, df.columns].values)
+
+    columns = df.columns.values.tolist()
+    columns.remove('momentum_kama') # was all nans
+
+    signals = np.nan_to_num(df.loc[:, columns].to_numpy())
+
+    
+    prices = df.loc[:, 'Close'].to_numpy()
+
 
     index = env.frame_bound[0] - env.window_size
     prices[index]  # validate index (TODO: Improve validation)
     prices = prices[index : env.frame_bound[1]]
 
-    # for col in df.columns:
+    # signal_features = []
+
+    # for col in columns:
     #     print(col)
+    #     print(df.loc[:, col].to_numpy())
     # diff = np.insert(np.diff(prices), 0, 0)
 
     
     # signal_features = np.column_stack((prices, diff))
     # print(signal_features)
-    signal_features = df.loc[:, df.columns].to_numpy()
-    print(signal_features)
+    signal_features = min_max_scaler.fit_transform(signals)
+    # print(signal_features)
 
     return prices, signal_features
 
@@ -80,7 +97,7 @@ ACTION_SPACE = 2
 
 sess = tf.Session()
 
-RL = DuelingDQN(n_actions=ACTION_SPACE, n_features=72, memory_size=MEMORY_SIZE, e_greedy_increment=0.001, sess=sess, dueling=True, output_graph=True)
+RL = DuelingDQN(n_actions=ACTION_SPACE, n_features=71, memory_size=MEMORY_SIZE, e_greedy_increment=0.001, sess=sess, dueling=True, output_graph=True)
 
 sess.run(tf.global_variables_initializer())
 
