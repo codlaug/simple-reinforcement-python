@@ -2,10 +2,10 @@ import numpy as np
 import tensorflow as tf
 from gym.spaces import Box, Discrete
 
-from playground.policies.base import BaseModelMixin, Policy, TrainConfig
-from playground.policies.memory import ReplayMemory, ReplayTrajMemory, Transition
-from playground.utils.misc import plot_learning_curve
-from playground.utils.tf_ops import dense_nn, conv2d_net, lstm_net
+from policies.base import BaseModelMixin, Policy, TrainConfig
+from policies.memory import ReplayMemory, ReplayTrajMemory, Transition
+from utils.misc import plot_learning_curve
+from utils.tf_ops import dense_nn, conv2d_net, lstm_net
 
 
 class DqnPolicy(Policy, BaseModelMixin):
@@ -232,6 +232,7 @@ class DqnPolicy(Policy, BaseModelMixin):
 
                 # No enough samples in the buffer yet.
                 if buffer.size < self.batch_size:
+                    print('filling buffer', buffer.size, self.batch_size)
                     continue
 
                 # Training with a mini batch of samples!
@@ -256,6 +257,7 @@ class DqnPolicy(Policy, BaseModelMixin):
                     [self.optimizer, self.q, self.q_target, self.loss, self.merged_summary],
                     feed_dict
                 )
+                print('writing')
                 self.writer.add_summary(summ_str, step)
                 if step % config.target_update_every_step:
                     self.update_target_q_net()

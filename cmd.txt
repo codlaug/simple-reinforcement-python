@@ -1,0 +1,4 @@
+tensorflowjs_converter --input_format=tf_saved_model --output_node_names='MobilenetV1/Predictions/Reshape_1' ./savedmodel/ ~/web_model
+
+https://gist.github.com/samuel-davis/a686b874398ce81d07b017e3d07bb62a
+Might need to get output_node_names?

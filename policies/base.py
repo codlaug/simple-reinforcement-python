@@ -122,6 +122,28 @@ class BaseModelMixin:
         ckpt_file = os.path.join(self.checkpoint_dir, self.model_name)
         self.saver.save(self.sess, ckpt_file, global_step=step)
 
+
+        export_path =  './savedmodel'
+        builder = tf.saved_model.builder.SavedModelBuilder(export_path)
+
+        tensor_info_x = tf.saved_model.utils.build_tensor_info(self.s)
+        tensor_info_y = tf.saved_model.utils.build_tensor_info(self.actor_proba)
+
+        prediction_signature = (
+        tf.saved_model.signature_def_utils.build_signature_def(
+            inputs={'x_input': tensor_info_x},
+            outputs={'y_output': tensor_info_y},
+            method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME))
+
+        builder.add_meta_graph_and_variables(
+        self.sess, [tf.saved_model.tag_constants.SERVING],
+        signature_def_map={
+            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                prediction_signature 
+        },
+        )
+        builder.save()
+
     def load_checkpoint(self):
         print(colorize(" [*] Loading checkpoints...", "green"))
         ckpt_path = tf.train.latest_checkpoint(self.checkpoint_dir)
@@ -173,6 +195,7 @@ class BaseModelMixin:
     @property
     def writer(self):
         if self._writer is None:
+            print(self.tb_dir)
             self._writer = tf.summary.FileWriter(self.tb_dir, self.sess.graph)
         return self._writer
 

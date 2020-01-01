@@ -91,12 +91,12 @@ def plot_from_monitor_results(monitor_dir, window=10):
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), tight_layout=True, sharex=True)
 
-    ax1.plot(range(n_episodes), pd.rolling_mean(np.array(data['episode_lengths']), window))
+    ax1.plot(range(n_episodes), pd.Series(np.array(data['episode_lengths'])).rolling(window=window).mean())
     ax1.set_xlabel('episode')
     ax1.set_ylabel('episode length')
     ax1.grid('k--', alpha=0.6)
 
-    ax2.plot(range(n_episodes), pd.rolling_mean(np.array(data['episode_rewards']), window))
+    ax2.plot(range(n_episodes), pd.Series(np.array(data['episode_rewards'])).rolling(window=window).mean())
     ax2.set_xlabel('episode')
     ax2.set_ylabel('episode reward')
     ax2.grid('k--', alpha=0.6)

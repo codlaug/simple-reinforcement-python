@@ -17,7 +17,28 @@ from tqdm import tqdm
 import ta
 from sklearn.preprocessing import MinMaxScaler
 
-from ddqn import DuelingDQN
+from policies.dqn import DqnPolicy
+
+
+import os
+import time
+from configs.manager import ConfigManager
+
+
+def run(config_name, model_name=None):
+    cfg = ConfigManager.load(config_name)
+    # cfg.add_env(env)
+
+    if model_name is None:
+        model_name = '-'.join([
+            cfg.env_name.lower(),
+            cfg.policy_name.replace('_', '-'),
+            os.path.splitext(os.path.basename(config_name))[0] if config_name else 'default',
+            str(int(time.time()))
+        ])
+
+    model_name = model_name.lower()
+    cfg.start_training(model_name)
 
 
 
@@ -33,6 +54,7 @@ def process_data(env):
 
     columns = df.columns.values.tolist()
     columns.remove('momentum_kama') # was all nans
+    print(columns)
 
     signals = np.nan_to_num(df.loc[:, columns].to_numpy())
 
@@ -59,8 +81,14 @@ def process_data(env):
 
     return prices, signal_features
 
+def get_observation(self):
+    return self.signal_features[self._current_tick]
+
+
 class WithTechnicalIndicators(ForexEnv):
     _process_data = process_data
+
+    _get_observation = get_observation
 
 
 
@@ -89,17 +117,44 @@ def render_all(self, mode='human'):
 
 
 
-env = WithTechnicalIndicators(df=(pd.read_csv('testdata.csv', index_col='Timestamp')), frame_bound=(50, 60000), window_size=1)
+# env = WithTechnicalIndicators(df=(pd.read_csv('testdata.csv', index_col='Timestamp')), frame_bound=(50, 60000), window_size=1)
 # env = gym.make('stocks-v0', frame_bound=(50, 100), window_size=10)
+
+from gym.envs.registration import register
+
+
+register(
+    id='technical-v0',
+    entry_point=WithTechnicalIndicators,
+    kwargs={
+        'df': pd.read_csv('testdata.csv', index_col='Timestamp'),
+        'window_size': 1,
+        'frame_bound': (50, 60000)
+    }
+)
+
+# env = gym.make('technical-v0')
 
 MEMORY_SIZE = 3000
 ACTION_SPACE = 2
 
-sess = tf.Session()
+# sess = tf.Session()
 
-RL = DuelingDQN(n_actions=ACTION_SPACE, n_features=71, memory_size=MEMORY_SIZE, e_greedy_increment=0.001, sess=sess, dueling=True, output_graph=True)
+# RL = DuelingDQN(n_actions=ACTION_SPACE, n_features=71, memory_size=MEMORY_SIZE, e_greedy_increment=0.001, sess=sess, dueling=True, output_graph=True)
+# RL = DqnPolicy(env, 'trading')
+# RL.build()
+# config = RL.TrainConfig(lr = 0.001, epsilon = 1.0, epsilon_final = 0.02)
 
-sess.run(tf.global_variables_initializer())
+        # "warmup_episodes": 450,
+        # "log_every_episode": 10,
+        # "n_episodes": 500,
+        # "target_update_every_step": 10
+# RL.train(config)
+
+run('configs/data/ppo.json')
+
+
+# sess.run(tf.global_variables_initializer())
 
 while True:
     accumulated_reward = [0]
