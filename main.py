@@ -24,6 +24,7 @@ import os
 import time
 from configs.manager import ConfigManager
 
+from ti_env import WithTechnicalIndicators
 
 
 # import tensorflow as tf
@@ -63,55 +64,6 @@ def run(config_name, model_name=None):
     model_name = model_name.lower()
     cfg.start_training(model_name)
 
-
-
-def process_data(env):
-    # df = env.df[env.frame_bound[0] : env.frame_bound[1]]
-    df = ta.utils.dropna(env.df)
-    df = ta.add_all_ta_features(df, open="Open", high="High", low="Low", close="Close", volume="Volume")
-    
-    # print(df)
-
-    min_max_scaler = MinMaxScaler()
-    # min_max_scaler.fit(df.loc[:, df.columns].values)
-
-    columns = df.columns.values.tolist()
-    columns.remove('momentum_kama') # was all nans
-    print(columns)
-
-    signals = np.nan_to_num(df.loc[:, columns].to_numpy())
-
-    
-    prices = df.loc[:, 'Close'].to_numpy()
-
-
-    index = env.frame_bound[0] - env.window_size
-    prices[index]  # validate index (TODO: Improve validation)
-    prices = prices[index : env.frame_bound[1]]
-
-    # signal_features = []
-
-    # for col in columns:
-    #     print(col)
-    #     print(df.loc[:, col].to_numpy())
-    # diff = np.insert(np.diff(prices), 0, 0)
-
-    
-    # signal_features = np.column_stack((prices, diff))
-    # print(signal_features)
-    signal_features = min_max_scaler.fit_transform(signals)
-    # print(signal_features)
-
-    return prices, signal_features
-
-def get_observation(self):
-    return self.signal_features[self._current_tick]
-
-
-class WithTechnicalIndicators(ForexEnv):
-    _process_data = process_data
-
-    _get_observation = get_observation
 
 
 
